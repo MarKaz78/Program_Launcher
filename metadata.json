@@ -1,0 +1,5 @@
+{
+  "name": "Program Launcher",
+  "description": "A web application that allows users to launch different web-based programs from a tiled interface. Each tile provides a name and a short description of the program's functionality.",
+  "requestFramePermissions": []
+}
