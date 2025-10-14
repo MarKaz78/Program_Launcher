@@ -43,49 +43,11 @@ export const EmailIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   </svg>
 );
 
-
-export const PROGRAMS: Program[] = [
-  {
-    id: 'code-editor',
-    name: 'Excel Wyszukiwarka Danych',
-    description: 'Narzędzie umożliwia wgranie pliku Excel, a następnie intuicyjne przeszukiwanie całej jego zawartości po słowie kluczowym, szybko wyświetlając pasujące dane z kontekstem.',
-    url: 'https://excelsearchengine.netlify.app/',
-    icon: CodeIcon,
-  },
-  {
-    id: 'design-tool',
-    name: 'Menadżer Kodyfikacji',
-    description: 'Narzędzie służy do definiowania i zarządzania spójnym standardem nazewnictwa plików, zapewniając ich ład i identyfikowalność.',
-    url: 'https://filenamingmanager.netlify.app/',
-    icon: DesignIcon,
-  },
-  {
-    id: 'project-management',
-    name: 'Edytor nagłówków IFC',
-    description: 'To narzędzie umożliwia dodanie uwag lub komentarzy do pliku IFC i zapisanie ich w polu "Description" nagłówka, a następnie pobranie zmodyfikowanego pliku.',
-    url: 'https://ifcheadereditor.netlify.app/',
-    icon: ProjectIcon,
-  },
- /* {
-    id: 'document-editor',
-    name: 'Edytor Dokumentów',
-    description: 'Twórz i edytuj dokumenty tekstowe online, współpracując z innymi w czasie rzeczywistym.',
-    url: 'https://docs.google.com',
-    icon: DocumentIcon,
-  },
-  {
-    id: 'spreadsheet-app',
-    name: 'Arkusz Kalkulacyjny',
-    description: 'Potężne narzędzie do analizy danych, tworzenia wykresów i zarządzania danymi w arkuszach.',
-    url: 'https://sheets.google.com',
-    icon: SheetIcon,
-  },
-  {
-    id: 'presentation-tool',
-    name: 'Tworzenie Prezentacji',
-    description: 'Projektuj profesjonalne prezentacje i pokazy slajdów, które zachwycą Twoją publiczność.',
-    url: 'https://slides.google.com',
-    icon: PresentationIcon,
-  },
-  */
-];
+export const ICON_MAP: { [key: string]: React.FC<React.SVGProps<SVGSVGElement>> } = {
+  CodeIcon,
+  DesignIcon,
+  ProjectIcon,
+  DocumentIcon,
+  SheetIcon,
+  PresentationIcon,
+};

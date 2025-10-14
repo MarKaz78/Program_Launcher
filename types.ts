@@ -1,10 +1,10 @@
-
 import type React from 'react';
 
 export interface Program {
-  id: string;
+  id: number;
   name: string;
   description: string;
   url: string;
-  icon: React.FC<React.SVGProps<SVGSVGElement>>;
+  icon: string;
+  created_at: string;
 }

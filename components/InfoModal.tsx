@@ -58,7 +58,7 @@ const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => {
         </button>
 
         <h2 id="info-modal-title" className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-          O Aplikacji
+          O aplikacji
         </h2>
 
         <div className="mt-4 space-y-4 text-slate-600 dark:text-slate-400">
@@ -66,7 +66,7 @@ const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => {
                 Witaj w Program Launcher! Jest to centralne miejsce do uruchamiania moich autorskich aplikacji webowych.
             </p>
             <div>
-                <h3 className="font-semibold text-slate-700 dark:text-slate-300">Użyte Technologie:</h3>
+                <h3 className="font-semibold text-slate-700 dark:text-slate-300">Użyte technologie:</h3>
                 <ul className="list-disc list-inside mt-2 space-y-1">
                     <li>React & TypeScript</li>
                     <li>Tailwind CSS</li>

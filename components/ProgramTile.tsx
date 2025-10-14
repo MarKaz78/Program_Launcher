@@ -1,12 +1,14 @@
 import React from 'react';
 import type { Program } from '../types';
+import { ICON_MAP } from '../constants';
 
 interface ProgramTileProps {
   program: Program;
 }
 
 const ProgramTile: React.FC<ProgramTileProps> = ({ program }) => {
-  const Icon = program.icon;
+  const isPredefinedIcon = ICON_MAP.hasOwnProperty(program.icon);
+  const IconComponent = isPredefinedIcon ? ICON_MAP[program.icon] : null;
 
   return (
     <a
@@ -17,7 +19,14 @@ const ProgramTile: React.FC<ProgramTileProps> = ({ program }) => {
     >
       <div className="flex-shrink-0">
         <div className="w-12 h-12 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-lg group-hover:bg-cyan-500 transition-colors duration-300">
-          <Icon className="w-7 h-7 text-cyan-500 dark:text-cyan-400 group-hover:text-white transition-colors duration-300" />
+          {IconComponent ? (
+            <IconComponent className="w-7 h-7 text-cyan-500 dark:text-cyan-400 group-hover:text-white transition-colors duration-300" />
+          ) : (
+            <div
+              className="w-7 h-7 text-cyan-500 dark:text-cyan-400 group-hover:text-white transition-colors duration-300 [&>svg]:w-full [&>svg]:h-full"
+              dangerouslySetInnerHTML={{ __html: program.icon }}
+            />
+          )}
         </div>
       </div>
       <div className="mt-4 flex-grow">
