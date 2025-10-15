@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -28,9 +29,10 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     isConfirming, 
     intent = 'danger', 
     confirmText,
-    cancelText = 'Anuluj'
+    cancelText
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -58,8 +60,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
     : 'bg-cyan-600 hover:bg-cyan-700 focus:ring-cyan-500';
 
-  const defaultConfirmText = intent === 'danger' ? 'Usuń' : 'Potwierdź';
-  const processingText = intent === 'danger' ? 'Usuwanie...' : 'Przetwarzanie...';
+  const defaultConfirmText = intent === 'danger' ? t('delete') : t('confirm');
+  const processingText = intent === 'danger' ? t('deleting') : t('processing');
 
   return (
     <div 
@@ -96,7 +98,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 disabled={isConfirming}
                 className="bg-slate-200 text-slate-800 font-semibold py-2 px-5 rounded-lg hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-800 focus:ring-slate-500 transition-all duration-300 disabled:opacity-50"
             >
-                {cancelText}
+                {cancelText || t('cancel')}
             </button>
             <button
                 onClick={onConfirm}

@@ -1,8 +1,10 @@
 import React, { useState, FormEvent, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const LoginPage: React.FC = () => {
     const { login, session } = useAuth();
+    const { t } = useLanguage();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -22,7 +24,7 @@ const LoginPage: React.FC = () => {
         const { error } = await login(email, password);
 
         if (error) {
-            setError(error.message || 'Wystąpił nieoczekiwany błąd.');
+            setError(error.message || t('unexpectedError'));
         } else {
             // The useEffect hook will handle redirection
             window.location.hash = '/admin';
@@ -38,16 +40,16 @@ const LoginPage: React.FC = () => {
              <div className="w-full max-w-md p-8 space-y-8 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-slate-200/80 dark:border-slate-700/50 rounded-2xl shadow-2xl">
                 <div>
                     <h2 className="text-center text-3xl font-extrabold text-slate-900 dark:text-slate-100">
-                        Panel administratora
+                        {t('adminPanelLoginTitle')}
                     </h2>
                      <p className="mt-2 text-center text-sm text-slate-600 dark:text-slate-400">
-                        Zaloguj się, aby zarządzać subskrypcjami.
+                        {t('loginToManage')}
                     </p>
                 </div>
                 <form className="mt-8 space-y-6" onSubmit={handleLogin}>
                     <div className="rounded-md shadow-sm -space-y-px">
                         <div>
-                            <label htmlFor="email-address" className="sr-only">Adres email</label>
+                            <label htmlFor="email-address" className="sr-only">{t('emailLabel')}</label>
                             <input
                                 id="email-address"
                                 name="email"
@@ -57,11 +59,11 @@ const LoginPage: React.FC = () => {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="appearance-none rounded-none relative block w-full px-3 py-3 border border-slate-300 dark:border-slate-700 bg-slate-100/70 dark:bg-slate-900/70 placeholder-slate-500 text-slate-900 dark:text-white rounded-t-md focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 focus:z-10 sm:text-sm transition-colors"
-                                placeholder="Adres email"
+                                placeholder={t('emailLabel')}
                             />
                         </div>
                         <div>
-                            <label htmlFor="password" className="sr-only">Hasło</label>
+                            <label htmlFor="password" className="sr-only">{t('passwordLabel')}</label>
                             <input
                                 id="password"
                                 name="password"
@@ -71,20 +73,20 @@ const LoginPage: React.FC = () => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 className="appearance-none rounded-none relative block w-full px-3 py-3 border border-slate-300 dark:border-slate-700 bg-slate-100/70 dark:bg-slate-900/70 placeholder-slate-500 text-slate-900 dark:text-white rounded-b-md focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 focus:z-10 sm:text-sm transition-colors"
-                                placeholder="Hasło"
+                                placeholder={t('passwordLabel')}
                             />
                         </div>
                     </div>
                     {error && <p className="text-sm text-red-500 dark:text-red-400 text-center">{error}</p>}
                     <div>
                         <button type="submit" disabled={loading} className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-md text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 dark:focus:ring-offset-slate-900 transition-colors disabled:opacity-50 disabled:cursor-wait">
-                            {loading ? 'Logowanie...' : 'Zaloguj się'}
+                            {loading ? t('loggingIn') : t('login')}
                         </button>
                     </div>
                 </form>
                  <p className="mt-4 text-center text-sm">
                     <a href="#/" onClick={(e) => { e.preventDefault(); window.location.hash = '/'; }} className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300">
-                        Powrót do strony głównej
+                        {t('backToHome')}
                     </a>
                 </p>
             </div>

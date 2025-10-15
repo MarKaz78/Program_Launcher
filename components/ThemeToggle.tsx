@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const SunIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
@@ -16,12 +17,13 @@ const MoonIcon = () => (
 
 const ThemeToggle: React.FC = () => {
     const { theme, toggleTheme } = useTheme();
+    const { t } = useLanguage();
 
     return (
         <button
             onClick={toggleTheme}
             className="p-2 rounded-full bg-slate-200/50 dark:bg-slate-800/50 backdrop-blur-sm border border-slate-300/50 dark:border-slate-700/50 text-slate-700 dark:text-slate-300 hover:bg-slate-300/70 dark:hover:bg-slate-700/70 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all duration-300"
-            aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            aria-label={theme === 'light' ? t('switchToDarkMode') : t('switchToLightMode')}
         >
             {theme === 'light' ? <MoonIcon /> : <SunIcon />}
         </button>

@@ -2,9 +2,10 @@ import React, { useState, useEffect, FormEvent } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { ICON_MAP } from '../constants';
-import type { Program } from '../types';
+import type { Program, LocalizedString } from '../types';
 import ConfirmationModal from '../components/ConfirmationModal';
 import EditProgramModal from '../components/EditProgramModal';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface Subscriber {
     id: number;
@@ -24,9 +25,11 @@ const EditIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     </svg>
 );
 
+const initialLocalizedString: LocalizedString = { pl: '', en: '', es: '' };
 
 const AdminPage: React.FC = () => {
     const { session, logout } = useAuth();
+    const { t, locale } = useLanguage();
     const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
     const [programs, setPrograms] = useState<Program[]>([]);
     
@@ -36,10 +39,11 @@ const AdminPage: React.FC = () => {
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     
     // New Program Form State
-    const [newProgramName, setNewProgramName] = useState('');
-    const [newProgramDesc, setNewProgramDesc] = useState('');
+    const [newProgramName, setNewProgramName] = useState<LocalizedString>(initialLocalizedString);
+    const [newProgramDesc, setNewProgramDesc] = useState<LocalizedString>(initialLocalizedString);
     const [newProgramUrl, setNewProgramUrl] = useState('');
     const [newProgramIcon, setNewProgramIcon] = useState('');
+    const [newProgramIsNew, setNewProgramIsNew] = useState(false);
     const [isAddingProgram, setIsAddingProgram] = useState(false);
 
     // Delete Confirmation Modal State
@@ -66,7 +70,7 @@ const AdminPage: React.FC = () => {
 
     const fetchSubscribers = async () => {
         if (!supabase) {
-            setError(prev => ({ ...prev, subscribers: 'Supabase is not configured.' }));
+            setError(prev => ({ ...prev, subscribers: t('noSupabaseConfig') }));
             setLoading(prev => ({...prev, subscribers: false}));
             return;
         }
@@ -86,7 +90,7 @@ const AdminPage: React.FC = () => {
 
     const fetchPrograms = async () => {
         if (!supabase) {
-            setError(prev => ({ ...prev, programs: 'Supabase is not configured.' }));
+            setError(prev => ({ ...prev, programs: t('noSupabaseConfig') }));
             setLoading(prev => ({...prev, programs: false}));
             return;
         }
@@ -94,7 +98,7 @@ const AdminPage: React.FC = () => {
         const { data, error } = await supabase
             .from('programs')
             .select('*')
-            .order('created_at', { ascending: true });
+            .order('created_at', { ascending: false });
 
         if (error) {
             setError(prev => ({ ...prev, programs: error.message }));
@@ -118,7 +122,7 @@ const AdminPage: React.FC = () => {
         const { error } = await supabase.from(fromTable).delete().eq('id', itemToDelete.id);
 
         if (error) {
-            alert(`Błąd usuwania: ${error.message}`);
+            alert(t('errorOccurred') + `: ${error.message}`);
         } else {
             if (itemToDelete.type === 'program') {
                 setPrograms(programs.filter(p => p.id !== itemToDelete.id));
@@ -134,25 +138,26 @@ const AdminPage: React.FC = () => {
     
     const handleAddProgram = async (e: FormEvent) => {
         e.preventDefault();
-        if (!supabase || !newProgramName || !newProgramDesc || !newProgramUrl || !newProgramIcon) {
-            alert('Wypełnij wszystkie pola.');
+        if (!supabase || !newProgramName.pl || !newProgramName.en || !newProgramName.es || !newProgramDesc.pl || !newProgramDesc.en || !newProgramDesc.es || !newProgramUrl || !newProgramIcon) {
+            alert(t('fillAllFields'));
             return;
         }
         setIsAddingProgram(true);
         const { data, error } = await supabase.from('programs').insert([
-            { name: newProgramName, description: newProgramDesc, url: newProgramUrl, icon: newProgramIcon }
+            { name: newProgramName, description: newProgramDesc, url: newProgramUrl, icon: newProgramIcon, is_new: newProgramIsNew }
         ]).select();
 
         if (error) {
-            alert(`Błąd dodawania: ${error.message}`);
+            alert(t('errorAdding', { message: error.message }));
         } else {
             if (data && data.length > 0) {
-              setPrograms([...programs, data[0]]);
+              setPrograms(currentPrograms => [data[0], ...currentPrograms]);
             }
-            setNewProgramName('');
-            setNewProgramDesc('');
+            setNewProgramName(initialLocalizedString);
+            setNewProgramDesc(initialLocalizedString);
             setNewProgramUrl('');
             setNewProgramIcon('');
+            setNewProgramIsNew(false);
         }
         setIsAddingProgram(false);
     };
@@ -172,12 +177,7 @@ const AdminPage: React.FC = () => {
         if (!pendingUpdate || !supabase) return;
         setIsConfirmingSave(true);
 
-        const updateData = {
-            name: pendingUpdate.name,
-            description: pendingUpdate.description,
-            url: pendingUpdate.url,
-            icon: pendingUpdate.icon,
-        };
+        const { id, created_at, ...updateData } = pendingUpdate;
 
         const { data, error } = await supabase
             .from('programs')
@@ -186,15 +186,15 @@ const AdminPage: React.FC = () => {
             .select();
 
         if (error) {
-            console.error("Błąd aktualizacji:", error);
-            alert(`Błąd aktualizacji: ${error.message}`);
+            console.error("Update error:", error);
+            alert(t('errorOccurred') + `: ${error.message}`);
         } else {
             if (data && data.length > 0) {
                 setPrograms(currentPrograms => 
                     currentPrograms.map(p => (p.id === data[0].id ? data[0] : p))
                 );
             } else {
-                console.warn("Operacja update nie zwróciła danych. Może to być problem z RLS. Odświeżam całą listę.");
+                console.warn("Update operation did not return data. This could be an RLS issue. Refetching the whole list.");
                 await fetchPrograms();
             }
         }
@@ -223,11 +223,11 @@ const AdminPage: React.FC = () => {
                 <div className="container mx-auto px-4 py-16">
                     <header className="flex justify-between items-center mb-12">
                         <div>
-                            <h1 className="text-4xl font-extrabold text-slate-800 dark:text-slate-200">Panel administratora</h1>
-                            <p className="mt-2 text-slate-500 dark:text-slate-400">Zalogowany jako: {session.user.email}</p>
+                            <h1 className="text-4xl font-extrabold text-slate-800 dark:text-slate-200">{t('adminPanelHeader')}</h1>
+                            <p className="mt-2 text-slate-500 dark:text-slate-400">{t('loggedInAs', { email: session.user.email || '' })}</p>
                         </div>
                         <button onClick={handleLogout} disabled={isLoggingOut} className="bg-red-500 text-white font-semibold py-2 px-5 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-100 dark:focus:ring-offset-slate-900 focus:ring-red-500 transition-all duration-300 disabled:opacity-50">
-                            {isLoggingOut ? 'Wylogowywanie...' : 'Wyloguj się'}
+                            {isLoggingOut ? t('loggingOut') : t('logout')}
                         </button>
                     </header>
 
@@ -235,37 +235,58 @@ const AdminPage: React.FC = () => {
                     <section className="mb-12">
                         <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-slate-200/80 dark:border-slate-700/50 rounded-2xl shadow-lg">
                             <div className="p-6 border-b border-slate-200/80 dark:border-slate-700/50">
-                                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Zarządzanie aplikacjami</h2>
+                                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">{t('appManagement')}</h2>
                             </div>
                             {/* Add Program Form */}
-                            <form onSubmit={handleAddProgram} className="p-6 space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <input type="text" placeholder="Nazwa aplikacji" value={newProgramName} onChange={e => setNewProgramName(e.target.value)} required className="w-full bg-slate-100/70 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 rounded-lg p-3 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-cyan-500 outline-none"/>
-                                    <input type="text" placeholder="URL" value={newProgramUrl} onChange={e => setNewProgramUrl(e.target.value)} required className="w-full bg-slate-100/70 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 rounded-lg p-3 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-cyan-500 outline-none"/>
+                            <form onSubmit={handleAddProgram} className="p-6 space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <input type="text" placeholder={t('appNamePL')} value={newProgramName.pl} onChange={e => setNewProgramName(s => ({...s, pl: e.target.value}))} required className="w-full bg-slate-100/70 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 rounded-lg p-3 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-cyan-500 outline-none"/>
+                                    <input type="text" placeholder={t('appNameEN')} value={newProgramName.en} onChange={e => setNewProgramName(s => ({...s, en: e.target.value}))} required className="w-full bg-slate-100/70 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 rounded-lg p-3 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-cyan-500 outline-none"/>
+                                    <input type="text" placeholder={t('appNameES')} value={newProgramName.es} onChange={e => setNewProgramName(s => ({...s, es: e.target.value}))} required className="w-full bg-slate-100/70 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 rounded-lg p-3 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-cyan-500 outline-none"/>
                                 </div>
-                                <textarea placeholder="Opis" value={newProgramDesc} onChange={e => setNewProgramDesc(e.target.value)} required rows={2} className="w-full bg-slate-100/70 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 rounded-lg p-3 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-cyan-500 outline-none"/>
-                                <textarea placeholder="Kod SVG ikony (np. <svg>...</svg>)" value={newProgramIcon} onChange={e => setNewProgramIcon(e.target.value)} required rows={3} className="w-full font-mono text-sm bg-slate-100/70 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 rounded-lg p-3 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-cyan-500 outline-none"/>
+                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <textarea placeholder={t('appDescriptionPL')} value={newProgramDesc.pl} onChange={e => setNewProgramDesc(s => ({...s, pl: e.target.value}))} required rows={2} className="w-full bg-slate-100/70 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 rounded-lg p-3 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-cyan-500 outline-none"/>
+                                    <textarea placeholder={t('appDescriptionEN')} value={newProgramDesc.en} onChange={e => setNewProgramDesc(s => ({...s, en: e.target.value}))} required rows={2} className="w-full bg-slate-100/70 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 rounded-lg p-3 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-cyan-500 outline-none"/>
+                                    <textarea placeholder={t('appDescriptionES')} value={newProgramDesc.es} onChange={e => setNewProgramDesc(s => ({...s, es: e.target.value}))} required rows={2} className="w-full bg-slate-100/70 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 rounded-lg p-3 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-cyan-500 outline-none"/>
+                                </div>
+                                <input type="text" placeholder={t('appURL')} value={newProgramUrl} onChange={e => setNewProgramUrl(e.target.value)} required className="w-full bg-slate-100/70 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 rounded-lg p-3 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-cyan-500 outline-none"/>
+                                <textarea placeholder={t('appIconSVG')} value={newProgramIcon} onChange={e => setNewProgramIcon(e.target.value)} required rows={3} className="w-full font-mono text-sm bg-slate-100/70 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 rounded-lg p-3 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-cyan-500 outline-none"/>
+                                
+                                <div className="flex items-center">
+                                    <input
+                                        id="is-new-add"
+                                        type="checkbox"
+                                        checked={newProgramIsNew}
+                                        onChange={e => setNewProgramIsNew(e.target.checked)}
+                                        className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-cyan-600 focus:ring-cyan-500"
+                                    />
+                                    <label htmlFor="is-new-add" className="ml-3 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                        {t('markAsNew')}
+                                    </label>
+                                </div>
+
                                 <div className="flex justify-end">
                                     <button type="submit" disabled={isAddingProgram} className="bg-cyan-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all disabled:opacity-50">
-                                        {isAddingProgram ? 'Dodawanie...' : 'Dodaj aplikację'}
+                                        {isAddingProgram ? t('adding') : t('addApp')}
                                     </button>
                                 </div>
                             </form>
 
                             {/* Program List */}
                             <div className="overflow-x-auto">
-                            {loading.programs ? <p className="p-6 text-center">Ładowanie aplikacji...</p> : error.programs ? <p className="p-6 text-center text-red-500">{error.programs}</p> :
+                            {loading.programs ? <p className="p-6 text-center">{t('loadingAppsAdmin')}</p> : error.programs ? <p className="p-6 text-center text-red-500">{error.programs}</p> :
                                 <table className="w-full text-sm text-left">
                                     <thead className="text-xs text-slate-700 uppercase bg-slate-100/70 dark:bg-slate-900/50 dark:text-slate-300">
                                         <tr>
-                                            <th className="px-6 py-3">Ikona</th>
-                                            <th className="px-6 py-3">Nazwa</th>
-                                            <th className="px-6 py-3">URL</th>
-                                            <th className="px-6 py-3 text-right">Akcje</th>
+                                            <th className="px-6 py-3">{t('icon')}</th>
+                                            <th className="px-6 py-3">{t('name')}</th>
+                                            <th className="px-6 py-3">{t('url')}</th>
+                                            <th className="px-6 py-3 text-right">{t('actions')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {programs.map(p => {
+                                            const displayName = p.name?.[locale] || p.name?.en || '';
                                             const isPredefinedIcon = ICON_MAP.hasOwnProperty(p.icon);
                                             const IconComponent = isPredefinedIcon ? ICON_MAP[p.icon] : null;
                                             return (
@@ -279,20 +300,20 @@ const AdminPage: React.FC = () => {
                                                         )}
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{p.name}</td>
+                                                <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{displayName}</td>
                                                 <td className="px-6 py-4 text-slate-500 dark:text-slate-400 truncate max-w-xs"><a href={p.url} target="_blank" rel="noopener noreferrer" className="hover:underline">{p.url}</a></td>
                                                 <td className="px-6 py-4 text-right space-x-2">
                                                     <button 
                                                         onClick={() => handleEditClick(p)}
                                                         className="p-2 rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                                                        aria-label={`Edytuj program ${p.name}`}
+                                                        aria-label={t('editApp', {name: displayName})}
                                                     >
                                                         <EditIcon className="w-5 h-5"/>
                                                     </button>
                                                     <button 
-                                                        onClick={() => openDeleteModal(p.id, 'program', p.name)}
+                                                        onClick={() => openDeleteModal(p.id, 'program', displayName)}
                                                         className="p-2 rounded-md text-red-600 dark:text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-                                                        aria-label={`Usuń program ${p.name}`}
+                                                        aria-label={t('deleteApp', {name: displayName})}
                                                     >
                                                         <TrashIcon className="w-5 h-5"/>
                                                     </button>
@@ -310,17 +331,17 @@ const AdminPage: React.FC = () => {
                     <section>
                         <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-slate-200/80 dark:border-slate-700/50 rounded-2xl shadow-lg overflow-hidden">
                             <div className="p-6 flex justify-between items-center border-b border-slate-200/80 dark:border-slate-700/50">
-                                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Lista subskrybentów ({subscribers.length})</h2>
-                                <button onClick={fetchSubscribers} className="text-cyan-500 hover:text-cyan-600" title="Odśwież"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-6 h-6 ${loading.subscribers ? 'animate-spin' : ''}`}><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.664 0l3.181-3.183m-11.664 0l-3.182-3.182m0 0a8.25 8.25 0 0111.664 0l3.182 3.182" /></svg></button>
+                                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">{t('subscribersList', {count: subscribers.length})}</h2>
+                                <button onClick={fetchSubscribers} className="text-cyan-500 hover:text-cyan-600" title={t('refresh')}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-6 h-6 ${loading.subscribers ? 'animate-spin' : ''}`}><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.664 0l3.181-3.183m-11.664 0l-3.182-3.182m0 0a8.25 8.25 0 0111.664 0l3.182 3.182" /></svg></button>
                             </div>
-                            {loading.subscribers ? <p className="p-6 text-center">Ładowanie subskrybentów...</p> : error.subscribers ? <p className="p-6 text-center text-red-500">{error.subscribers}</p> :
+                            {loading.subscribers ? <p className="p-6 text-center">{t('loadingSubscribers')}</p> : error.subscribers ? <p className="p-6 text-center text-red-500">{error.subscribers}</p> :
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-sm text-left text-slate-600 dark:text-slate-400">
                                         <thead className="text-xs text-slate-700 uppercase bg-slate-100/70 dark:bg-slate-900/50 dark:text-slate-300">
                                             <tr>
                                                 <th scope="col" className="px-6 py-3">Email</th>
-                                                <th scope="col" className="px-6 py-3">Data zapisu</th>
-                                                <th scope="col" className="px-6 py-3 text-right">Akcje</th>
+                                                <th scope="col" className="px-6 py-3">{t('dateSubscribed')}</th>
+                                                <th scope="col" className="px-6 py-3 text-right">{t('actions')}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -332,7 +353,7 @@ const AdminPage: React.FC = () => {
                                                         <button 
                                                             onClick={() => openDeleteModal(sub.id, 'subscriber', sub.email)}
                                                             className="p-2 rounded-md text-red-600 dark:text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-                                                            aria-label={`Usuń subskrybenta ${sub.email}`}
+                                                            aria-label={t('deleteSubscriber', {email: sub.email})}
                                                         >
                                                             <TrashIcon className="w-5 h-5"/>
                                                         </button>
@@ -340,7 +361,7 @@ const AdminPage: React.FC = () => {
                                                 </tr>
                                             ))}
                                             {subscribers.length === 0 && (
-                                                <tr><td colSpan={3} className="text-center py-8">Brak subskrybentów.</td></tr>
+                                                <tr><td colSpan={3} className="text-center py-8">{t('noSubscribers')}</td></tr>
                                             )}
                                         </tbody>
                                     </table>
@@ -350,7 +371,7 @@ const AdminPage: React.FC = () => {
                     </section>
                     <p className="mt-8 text-center text-sm">
                         <a href="#/" onClick={(e) => { e.preventDefault(); window.location.hash = '/'; }} className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300">
-                            Powrót do strony głównej
+                            {t('backToHome')}
                         </a>
                     </p>
                 </div>
@@ -361,10 +382,12 @@ const AdminPage: React.FC = () => {
                 onClose={() => setIsDeleteModalOpen(false)}
                 onConfirm={handleConfirmDelete}
                 isConfirming={isConfirmingDelete}
-                title="Potwierdzenie usunięcia"
-                message={`Czy na pewno chcesz usunąć ${itemToDelete?.type === 'program' ? 'aplikację' : 'subskrybenta'} "${itemToDelete?.name}"? Tej akcji nie można cofnąć.`}
+                title={t('deleteConfirmationTitle')}
+                message={itemToDelete?.type === 'program' 
+                    ? t('deleteConfirmationMessageApp', {name: itemToDelete?.name || ''}) 
+                    : t('deleteConfirmationMessageSubscriber', {name: itemToDelete?.name || ''})
+                }
                 intent="danger"
-                confirmText="Usuń"
             />
 
             {programToEdit && (
@@ -381,10 +404,10 @@ const AdminPage: React.FC = () => {
                 onClose={() => setIsSaveConfirmModalOpen(false)}
                 onConfirm={handleConfirmSave}
                 isConfirming={isConfirmingSave}
-                title="Potwierdzenie zapisu"
-                message={`Czy na pewno chcesz zapisać zmiany w aplikacji "${pendingUpdate?.name}"?`}
+                title={t('saveConfirmationTitle')}
+                message={t('saveConfirmationMessage', {name: pendingUpdate?.name[locale] || pendingUpdate?.name.en || ''})}
                 intent="primary"
-                confirmText="Zapisz"
+                confirmText={t('save')}
             />
         </>
     );

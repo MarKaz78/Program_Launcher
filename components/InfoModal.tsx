@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface InfoModalProps {
   onClose: () => void;
@@ -6,6 +7,7 @@ interface InfoModalProps {
 
 const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => {
   const modalRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -58,15 +60,15 @@ const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => {
         </button>
 
         <h2 id="info-modal-title" className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-          O aplikacji
+          {t('aboutApp')}
         </h2>
 
         <div className="mt-4 space-y-4 text-slate-600 dark:text-slate-400">
             <p>
-                Witaj w Program Launcher! Jest to centralne miejsce do uruchamiania moich autorskich aplikacji webowych.
+                {t('aboutAppDescription')}
             </p>
             <div>
-                <h3 className="font-semibold text-slate-700 dark:text-slate-300">Użyte technologie:</h3>
+                <h3 className="font-semibold text-slate-700 dark:text-slate-300">{t('usedTechnologies')}</h3>
                 <ul className="list-disc list-inside mt-2 space-y-1">
                     <li>React & TypeScript</li>
                     <li>Tailwind CSS</li>
@@ -74,7 +76,7 @@ const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => {
                 </ul>
             </div>
             <p>
-                Stworzone przez <a href="https://www.linkedin.com/company/bim-partner/" target="_blank" rel="noopener noreferrer" className="font-semibold text-cyan-600 dark:text-cyan-400 hover:underline">BIM PARTNER</a>.
+                {t('createdBy')} <a href="https://www.linkedin.com/company/bim-partner/" target="_blank" rel="noopener noreferrer" className="font-semibold text-cyan-600 dark:text-cyan-400 hover:underline">BIM PARTNER</a>.
             </p>
         </div>
         
@@ -83,7 +85,7 @@ const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => {
                 onClick={onClose}
                 className="bg-cyan-500 text-white font-semibold py-2 px-5 rounded-lg hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-800 focus:ring-cyan-500 transition-all duration-300"
             >
-                Rozumiem
+                {t('understand')}
             </button>
         </div>
       </div>

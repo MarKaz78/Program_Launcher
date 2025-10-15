@@ -1,22 +1,32 @@
 import React from 'react';
 import type { Program } from '../types';
 import { ICON_MAP } from '../constants';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ProgramTileProps {
   program: Program;
 }
 
 const ProgramTile: React.FC<ProgramTileProps> = ({ program }) => {
+  const { locale, t } = useLanguage();
   const isPredefinedIcon = ICON_MAP.hasOwnProperty(program.icon);
   const IconComponent = isPredefinedIcon ? ICON_MAP[program.icon] : null;
+
+  const displayName = program.name?.[locale] || program.name?.en || '';
+  const displayDescription = program.description?.[locale] || program.description?.en || '';
 
   return (
     <a
       href={program.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex flex-col bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-slate-200/80 dark:border-slate-700/50 rounded-xl p-6 transition-all duration-300 ease-in-out hover:bg-slate-50/70 dark:hover:bg-slate-700/70 hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-500/10"
+      className="relative group flex flex-col bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-slate-200/80 dark:border-slate-700/50 rounded-xl p-6 transition-all duration-300 ease-in-out hover:bg-slate-50/70 dark:hover:bg-slate-700/70 hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-500/10"
     >
+      {program.is_new && (
+        <div className="absolute top-0 right-0 bg-cyan-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-xl animate-pulse">
+          {t('newBadge')}
+        </div>
+      )}
       <div className="flex-shrink-0">
         <div className="w-12 h-12 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-lg group-hover:bg-cyan-500 transition-colors duration-300">
           {IconComponent ? (
@@ -30,8 +40,8 @@ const ProgramTile: React.FC<ProgramTileProps> = ({ program }) => {
         </div>
       </div>
       <div className="mt-4 flex-grow">
-        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">{program.name}</h3>
-        <p className="mt-2 text-slate-600 dark:text-slate-400 text-sm leading-relaxed">{program.description}</p>
+        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">{displayName}</h3>
+        <p className="mt-2 text-slate-600 dark:text-slate-400 text-sm leading-relaxed">{displayDescription}</p>
       </div>
     </a>
   );
